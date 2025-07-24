@@ -29,6 +29,7 @@ A modern, feature-rich task and project management app built with React Native a
 ### Installation
 
 1. **Clone the repository**
+<<<<<<< HEAD
    ```bash
    git clone https://github.com/taylandeveci/PlannerApp.git
    cd PlannerApp
@@ -133,3 +134,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Taylan Deveci - taylandeveci@example.com
 
 Project Link: [https://github.com/taylandeveci/PlannerApp](https://github.com/taylandeveci/PlannerApp)
+=======
+   ```bash
+   git clone https://github.com/taylandeveci/PlannerApp.git
+   cd PlannerApp
+>>>>>>> 5e180579bc55e69970199f24bba81c3153cf3a90
