@@ -1,50 +1,135 @@
-# Welcome to your Expo app 👋
+# PlannerApp
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern, feature-rich task and project management app built with React Native and Expo Router.
 
-## Get started
+![React Native](https://img.shields.io/badge/React%20Native-0.76.5-blue.svg)
+![Expo](https://img.shields.io/badge/Expo-~52.0.21-black.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue.svg)
 
-1. Install dependencies
+## Features
 
+- **Dashboard**: Real-time project and task statistics with interactive cards
+- **Task Management**: Create, edit, update status, and delete tasks
+- **Project Organization**: Organize tasks by projects
+- **Quick Actions**: Fast status updates (Pending, In Progress, Completed)
+- **Modern UI**: Clean, intuitive interface with Ionicons
+- **Cross-Platform**: Runs on iOS, Android, and Web
+- **Real-time Updates**: Dynamic data loading with refresh capabilities
+- **Error Handling**: Robust error handling with user feedback
+- **API Integration**: Mock data support with real API fallback
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (16 or newer)
+- npm or yarn
+- Expo CLI
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/taylandeveci/PlannerApp.git
+   cd PlannerApp
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Start the development server**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Run on your preferred platform**
+   - **Web**: Press `w` in the terminal or open http://localhost:8081
+   - **iOS Simulator**: Press `i` (requires Xcode on macOS)
+   - **Android Emulator**: Press `a` (requires Android Studio)
+   - **Physical Device**: Scan QR code with Expo Go app
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Screenshots & Demo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Dashboard**: Interactive stats cards showing project and task counts
+- **Task Details**: Comprehensive task view with quick action buttons
+- **Status Management**: Easy status updates with visual feedback
+- **Responsive Design**: Works seamlessly across all screen sizes
 
-## Get a fresh project
+## Project Structure
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+PlannerApp/
+├── app/                    # Main application code
+│   ├── (tabs)/            # Tab-based navigation
+│   │   ├── index.tsx      # Dashboard screen
+│   │   ├── tasks/         # Task-related screens
+│   │   └── projects/      # Project-related screens
+│   └── _layout.tsx        # Root layout
+├── components/            # Reusable UI components
+├── lib/                   # Utilities and services
+│   └── apiService.ts      # API service with mock data
+├── types/                 # TypeScript type definitions
+└── assets/               # Images, fonts, and other assets
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Tech Stack
 
-## Learn more
+- **Framework**: React Native with Expo
+- **Navigation**: Expo Router (file-based routing)
+- **Language**: TypeScript
+- **Icons**: Expo Vector Icons (Ionicons)
+- **HTTP Client**: Axios
+- **State Management**: React Hooks
+- **Styling**: React Native StyleSheet
 
-To learn more about developing your project with Expo, look at the following resources:
+## Key Components
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Dashboard
+- Real-time project and task statistics
+- Clickable navigation cards
+- Pull-to-refresh functionality
 
-## Join the community
+### Task Management
+- Full CRUD operations
+- Status tracking (Pending, In Progress, Completed)
+- Priority levels and due dates
+- Quick action buttons
 
-Join our community of developers creating universal apps.
+### API Service
+- Mock data for development
+- Fallback to real API when available
+- Consistent error handling
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Configuration
+
+The app uses a flexible API service that supports both mock data and real API endpoints. Configure your API base URL in `lib/apiService.ts`:
+
+```typescript
+const API_BASE_URL = 'http://localhost:5144/api';
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with [Expo](https://expo.dev)
+- Icons by [Expo Vector Icons](https://docs.expo.dev/guides/icons/)
+- UI inspiration from modern task management apps
+
+## Contact
+
+Taylan Deveci - taylandeveci@example.com
+
+Project Link: [https://github.com/taylandeveci/PlannerApp](https://github.com/taylandeveci/PlannerApp)

@@ -9,29 +9,37 @@ export interface User {
   status: string;
   createdUserId: number;
   passwordHash: string;
+  avatar?: string;
+  role?: string;
 }
 
 export interface Project {
   id: number;
   name: string;
+  description?: string;
   createdUserId: number;
   createdDate: string;
   status: string;
+  dueDate?: string;
+  priority?: string;
 }
 
 export interface Task {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   projectId: number;
   priorityId: number;
   authorId: number;
   assignId: number;
-  estimatedTime: number;
-  dueDate: string;
+  estimatedTime?: number;
+  dueDate?: string;
   createdUserId: number;
   createdDate: string;
   status: string;
+  tags?: string[];
+  completedDate?: string;
+  progress?: number;
 }
 
 export interface TaskBacklog {
@@ -43,6 +51,24 @@ export interface TaskBacklog {
   createdUserId: number;
   createdDate: string;
   status: string;
+}
+
+export interface Priority {
+  id: number;
+  name: string;
+  color: string;
+  level: number;
+}
+
+export interface DashboardStats {
+  totalProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  totalTasks: number;
+  pendingTasks: number;
+  inProgressTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
 }
 
 // API Response wrapper (if your API wraps responses)
