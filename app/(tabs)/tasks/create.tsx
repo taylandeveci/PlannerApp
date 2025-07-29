@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Header from '../../../components/Header';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { apiService } from '../../../lib/apiService';
+import { Project, User } from '../../../types/api';
 
 export default function CreateTaskScreen() {
   const router = useRouter();
@@ -20,6 +21,14 @@ export default function CreateTaskScreen() {
     dueDate: '',
     status: 'pending'
   });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     name: '',
@@ -27,6 +36,52 @@ export default function CreateTaskScreen() {
     assignId: '',
     dueDate: ''
   });
+
+  // Fetch projects and users on component mount
+  useEffect(() => {
+    fetchProjects();
+    fetchUsers();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setProjectsLoading(true);
+      const fetchedProjects = await apiService.getProjects();
+      setProjects(fetchedProjects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      Alert.alert('Error', 'Failed to fetch projects');
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const fetchedUsers = await apiService.getUsers();
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      Alert.alert('Error', 'Failed to fetch users');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const selectProject = (project: Project) => {
+    setSelectedProject(project);
+    updateTaskData('projectId', project.id.toString());
+    setShowProjectPicker(false);
+    if (errors.projectId) clearError('projectId');
+  };
+
+  const selectUser = (user: User) => {
+    setSelectedUser(user);
+    updateTaskData('assignId', user.id.toString());
+    setShowUserPicker(false);
+    if (errors.assignId) clearError('assignId');
+  };
 
   const validateDueDate = (date: string) => {
     if (!date) return true; // Optional field
@@ -55,12 +110,12 @@ export default function CreateTaskScreen() {
     }
 
     if (!taskData.projectId || parseInt(taskData.projectId.toString()) < 1) {
-      setErrors(prev => ({ ...prev, projectId: 'Please enter a valid project ID (minimum 1)' }));
+      setErrors(prev => ({ ...prev, projectId: 'Please select a project' }));
       hasError = true;
     }
 
     if (!taskData.assignId || parseInt(taskData.assignId.toString()) < 1) {
-      setErrors(prev => ({ ...prev, assignId: 'Please enter a valid user ID (minimum 1)' }));
+      setErrors(prev => ({ ...prev, assignId: 'Please select a user to assign the task' }));
       hasError = true;
     }
 
@@ -149,31 +204,34 @@ export default function CreateTaskScreen() {
 
         <View style={styles.row}>
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>Project ID</Text>
-            <TextInput
+            <Text style={[styles.label, { color: theme.colors.text }]}>Project *</Text>
+            <TouchableOpacity
               style={[
-                styles.input, 
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+                styles.input,
+                styles.dropdown,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                 errors.projectId && { borderColor: theme.colors.error, borderWidth: 2 }
               ]}
-              placeholder="Enter project ID (minimum 1)"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={taskData.projectId.toString()}
-              onChangeText={(text) => {
-                // Allow empty string to show placeholder
-                if (text === '') {
-                  updateTaskData('projectId', '');
-                  if (errors.projectId) clearError('projectId');
-                  return;
+              onPress={() => setShowProjectPicker(true)}
+              disabled={projectsLoading}
+            >
+              <Text style={[
+                styles.dropdownText,
+                { color: selectedProject ? theme.colors.text : theme.colors.textSecondary }
+              ]}>
+                {projectsLoading 
+                  ? 'Loading projects...' 
+                  : selectedProject 
+                    ? selectedProject.name 
+                    : 'Select a project'
                 }
-                const num = parseInt(text);
-                if (!isNaN(num) && num >= 1) {
-                  updateTaskData('projectId', text);
-                  if (errors.projectId) clearError('projectId');
-                }
-              }}
-              keyboardType="numeric"
-            />
+              </Text>
+              <Ionicons 
+                name="chevron-down" 
+                size={20} 
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
             {errors.projectId ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.projectId}</Text> : null}
           </View>
 
@@ -229,31 +287,34 @@ export default function CreateTaskScreen() {
           </View>
 
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>Assign To (User ID)</Text>
-            <TextInput
+            <Text style={[styles.label, { color: theme.colors.text }]}>Assign To *</Text>
+            <TouchableOpacity
               style={[
-                styles.input, 
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+                styles.input,
+                styles.dropdown,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                 errors.assignId && { borderColor: theme.colors.error, borderWidth: 2 }
               ]}
-              placeholder="Enter user ID (minimum 1)"
-              placeholderTextColor={theme.colors.textSecondary}
-              value={taskData.assignId.toString()}
-              onChangeText={(text) => {
-                // Allow empty string to show placeholder
-                if (text === '') {
-                  updateTaskData('assignId', '');
-                  if (errors.assignId) clearError('assignId');
-                  return;
+              onPress={() => setShowUserPicker(true)}
+              disabled={usersLoading}
+            >
+              <Text style={[
+                styles.dropdownText,
+                { color: selectedUser ? theme.colors.text : theme.colors.textSecondary }
+              ]}>
+                {usersLoading 
+                  ? 'Loading users...' 
+                  : selectedUser 
+                    ? selectedUser.name 
+                    : 'Select a user'
                 }
-                const num = parseInt(text);
-                if (!isNaN(num) && num >= 1) {
-                  updateTaskData('assignId', text);
-                  if (errors.assignId) clearError('assignId');
-                }
-              }}
-              keyboardType="numeric"
-            />
+              </Text>
+              <Ionicons 
+                name="chevron-down" 
+                size={20} 
+                color={theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
             {errors.assignId ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.assignId}</Text> : null}
           </View>
         </View>
@@ -320,6 +381,130 @@ export default function CreateTaskScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Project Picker Modal */}
+      <Modal
+        visible={showProjectPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowProjectPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Select Project</Text>
+              <TouchableOpacity
+                onPress={() => setShowProjectPicker(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={projects}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.projectItem,
+                    { borderBottomColor: theme.colors.border },
+                    selectedProject?.id === item.id && { backgroundColor: theme.colors.primary + '20' }
+                  ]}
+                  onPress={() => selectProject(item)}
+                >
+                  <View style={styles.projectInfo}>
+                    <Text style={[styles.projectName, { color: theme.colors.text }]}>
+                      {item.name}
+                    </Text>
+                    {item.description && (
+                      <Text style={[styles.projectDescription, { color: theme.colors.textSecondary }]}>
+                        {item.description}
+                      </Text>
+                    )}
+                    <Text style={[styles.projectStatus, { color: theme.colors.textSecondary }]}>
+                      Status: {item.status}
+                    </Text>
+                  </View>
+                  {selectedProject?.id === item.id && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }]}>
+                    No projects available
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* User Picker Modal */}
+      <Modal
+        visible={showUserPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowUserPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Select User</Text>
+              <TouchableOpacity
+                onPress={() => setShowUserPicker(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={users}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.projectItem,
+                    { borderBottomColor: theme.colors.border },
+                    selectedUser?.id === item.id && { backgroundColor: theme.colors.primary + '20' }
+                  ]}
+                  onPress={() => selectUser(item)}
+                >
+                  <View style={styles.projectInfo}>
+                    <Text style={[styles.projectName, { color: theme.colors.text }]}>
+                      {item.name}
+                    </Text>
+                    <Text style={[styles.projectDescription, { color: theme.colors.textSecondary }]}>
+                      {item.email}
+                    </Text>
+                    {item.role && (
+                      <Text style={[styles.projectStatus, { color: theme.colors.textSecondary }]}>
+                        Role: {item.role}
+                      </Text>
+                    )}
+                  </View>
+                  {selectedUser?.id === item.id && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={[styles.emptyStateText, { color: theme.colors.textSecondary }]}>
+                    No users available
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -408,5 +593,73 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+  },
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    maxHeight: '70%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  projectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  projectInfo: {
+    flex: 1,
+  },
+  projectName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  projectDescription: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  projectStatus: {
+    fontSize: 12,
+    textTransform: 'capitalize',
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });

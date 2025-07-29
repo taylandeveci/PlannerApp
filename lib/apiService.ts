@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Project, Task } from '../types/api';
+import { Project, Task, User } from '../types/api';
 
 const API_BASE_URL = 'http://localhost:5144/api';
 const API_TIMEOUT = 5000;
@@ -379,6 +379,92 @@ export const apiService = {
         return true;
       }
       return false;
+    }
+  },
+
+  // Users API
+  async getUsers(): Promise<User[]> {
+    if (useMockData) {
+      // Mock users data
+      const mockUsers: User[] = [
+        {
+          id: 1,
+          name: "John Doe",
+          email: "john.doe@example.com",
+          createdDate: "2025-07-20T10:00:00.000",
+          roleId: 1,
+          status: "active",
+          createdUserId: 1,
+          passwordHash: "",
+          role: "Developer"
+        },
+        {
+          id: 2,
+          name: "Jane Smith",
+          email: "jane.smith@example.com",
+          createdDate: "2025-07-21T10:00:00.000",
+          roleId: 2,
+          status: "active",
+          createdUserId: 1,
+          passwordHash: "",
+          role: "Designer"
+        },
+        {
+          id: 3,
+          name: "Mike Johnson",
+          email: "mike.johnson@example.com",
+          createdDate: "2025-07-22T10:00:00.000",
+          roleId: 1,
+          status: "active",
+          createdUserId: 1,
+          passwordHash: "",
+          role: "Developer"
+        }
+      ];
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(mockUsers), 500);
+      });
+    }
+
+    // Real API call
+    try {
+      console.log('Attempting API call to /User');
+      const response = await apiClient.get('/User');
+      console.log('Users API call successful, response:', response.status);
+      const users = response.data as User[];
+      console.log('Users from API:', users.length);
+      return users;
+    } catch (error: any) {
+      console.error('Users API call failed:', error?.message || 'Unknown error');
+      console.warn('Users API not available, switching to mock data');
+      useMockData = true;
+      
+      // Return mock data as fallback
+      const mockUsers: User[] = [
+        {
+          id: 1,
+          name: "[FALLBACK] John Doe",
+          email: "john.doe@example.com",
+          createdDate: "2025-07-20T10:00:00.000",
+          roleId: 1,
+          status: "active",
+          createdUserId: 1,
+          passwordHash: "",
+          role: "Developer"
+        },
+        {
+          id: 2,
+          name: "[FALLBACK] Jane Smith",
+          email: "jane.smith@example.com",
+          createdDate: "2025-07-21T10:00:00.000",
+          roleId: 2,
+          status: "active",
+          createdUserId: 1,
+          passwordHash: "",
+          role: "Designer"
+        }
+      ];
+      return mockUsers;
     }
   },
 
