@@ -78,7 +78,9 @@ export default function TaskDetailScreen() {
   };
 
   const deleteTask = async () => {
+    console.log('=== TASK DETAILS DELETE START ===');
     console.log('Delete task button clicked for task ID:', id);
+    console.log('Task ID type:', typeof id);
     Alert.alert(
       'Delete Task',
       'Are you sure you want to delete this task? This action cannot be undone.',
@@ -89,14 +91,18 @@ export default function TaskDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('User confirmed delete');
               console.log('Attempting to delete task with ID:', id);
+              console.log('Converting ID to number:', parseInt(id as string));
               const success = await apiService.deleteTask(parseInt(id as string));
-              console.log('Delete result:', success);
+              console.log('Delete result from apiService:', success);
               if (success) {
+                console.log('Delete successful, showing success alert');
                 Alert.alert('Success', 'Task deleted successfully', [
                   { text: 'OK', onPress: () => router.back() }
                 ]);
               } else {
+                console.log('Delete failed, showing error alert');
                 Alert.alert('Error', 'Failed to delete task');
               }
             } catch (error) {

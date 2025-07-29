@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Header from '../../../components/Header';
-import LoadingAnimation from '../../../components/LoadingAnimation';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { apiService } from '../../../lib/apiService';
 
@@ -306,7 +305,7 @@ export default function CreateTaskScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
+        <TouchableOpacity 
           style={[
             styles.createButton,
             { backgroundColor: theme.colors.primary },
@@ -315,11 +314,7 @@ export default function CreateTaskScreen() {
           onPress={createTask}
           disabled={loading}
         >
-          {loading ? (
-            <LoadingAnimation size="small" color={theme.isDark ? theme.colors.text : '#ffffff'} />
-          ) : (
-            <Ionicons name="add-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
-          )}
+          <Ionicons name="add-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
           <Text style={[styles.createButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>
             {loading ? 'Creating Task...' : 'Create Task'}
           </Text>

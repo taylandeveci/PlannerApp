@@ -23,7 +23,7 @@ const apiClient = axios.create({
   timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
   }
 });
 
@@ -168,10 +168,53 @@ const mockTasks: Task[] = [
 let useMockData = false;
 
 export const apiService = {
+  // Test function to directly call API
+  async testApiConnection(): Promise<void> {
+    console.log('=== TESTING API CONNECTION ===');
+    
+    // Test real API connection
+    console.log('TESTING REAL API CONNECTION');
+    useMockData = false;
+    console.log('useMockData set to false - API mode enabled');
+    
+    try {
+      console.log('Testing basic fetch to http://localhost:5144/api/Project');
+      const response = await fetch('http://localhost:5144/api/Project', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Fetch response status:', response.status);
+      console.log('Fetch response ok:', response.ok);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetch data:', data);
+        useMockData = false;
+        console.log('API is working! Setting useMockData to false');
+      } else {
+        console.log('API returned error status:', response.status);
+        useMockData = true;
+      }
+    } catch (error) {
+      console.error('Fetch failed:', error);
+      useMockData = true;
+    }
+  },
+
   // Dashboard API
   async getDashboardStats(): Promise<any> {
+    console.log('=== DASHBOARD STATS START ===');
+    console.log('Initial useMockData status:', useMockData);
+    
+    // Test API connection first
+    await this.testApiConnection();
+    console.log('After API test, useMockData status:', useMockData);
+    
     const projects = await this.getProjects();
     const tasks = await this.getTasks();
+    console.log('Projects fetched:', projects.length);
+    console.log('Tasks fetched:', tasks.length);
     
     const stats = {
       totalProjects: projects.length,
@@ -194,19 +237,37 @@ export const apiService = {
 
   // Projects API
   async getProjects(): Promise<Project[]> {
+    console.log('=== GET PROJECTS START ===');
+    console.log('useMockData status:', useMockData);
+    console.log('API_BASE_URL:', 'http://localhost:5144');
+    
     if (useMockData) {
+      console.log('Using mock data for getProjects');
       return new Promise((resolve) => {
         setTimeout(() => resolve(mockProjects), 500);
       });
     }
 
+    // Real API call
     try {
-      const response = await apiClient.get('/project');
-      return response.data as Project[];
-    } catch {
-      console.warn('API not available, using mock data');
+      console.log('Attempting API call to /Project');
+      const response = await apiClient.get('/Project');
+      console.log('API call successful, response:', response.status);
+      const projects = response.data as Project[];
+      console.log('Projects from API:', projects.length);
+      return projects;
+    } catch (error: any) {
+      console.error('API call failed:', error?.message || 'Unknown error');
+      console.error('Error details:', error?.response?.status, error?.response?.statusText);
+      console.warn('API not available, switching to mock data');
       useMockData = true;
-      return mockProjects;
+      
+      // Return mock data with API prefix to show fallback is working
+      return mockProjects.map(project => ({
+        ...project,
+        name: `[FALLBACK] ${project.name}`,
+        description: `${project.description} - API FAILED, USING FALLBACK`
+      }));
     }
   },
 
@@ -219,7 +280,7 @@ export const apiService = {
     }
 
     try {
-      const response = await apiClient.get(`/project/${id}`);
+      const response = await apiClient.get(`/Project/${id}`);
       return response.data as Project;
     } catch {
       console.warn('API not available, using mock data');
@@ -244,7 +305,7 @@ export const apiService = {
     }
 
     try {
-      const response = await apiClient.post('/project', projectData);
+      const response = await apiClient.post('/Project', projectData);
       // Trigger dashboard refresh
       triggerDashboardRefresh();
       return response.data as Project;
@@ -276,7 +337,7 @@ export const apiService = {
     }
 
     try {
-      const response = await apiClient.put(`/project/${id}`, projectData);
+      const response = await apiClient.put(`/Project/${id}`, projectData);
       return response.data as Project;
     } catch {
       console.warn('API not available, using mock data');
@@ -307,7 +368,7 @@ export const apiService = {
     }
 
     try {
-      await apiClient.delete(`/project/${id}`);
+      await apiClient.delete(`/Project/${id}`);
       return true;
     } catch {
       console.warn('API not available, using mock data');
@@ -323,42 +384,77 @@ export const apiService = {
 
   // Tasks API
   async getTasks(projectId?: number): Promise<Task[]> {
+    console.log('=== GET TASKS START ===');
+    console.log('useMockData status:', useMockData);
+    console.log('projectId filter:', projectId);
+    
     if (useMockData) {
+      console.log('Using mock data for getTasks');
+      console.log('mockTasks length:', mockTasks.length);
       const filteredTasks = projectId 
         ? mockTasks.filter(t => t.projectId === projectId)
         : mockTasks;
+      console.log('Filtered tasks length:', filteredTasks.length);
       return new Promise((resolve) => {
-        setTimeout(() => resolve(filteredTasks), 500);
+        setTimeout(() => {
+          console.log('Returning tasks:', filteredTasks.map(t => t.name));
+          resolve(filteredTasks);
+        }, 500);
       });
     }
 
+    // Real API call
     try {
-      const url = projectId ? `/task?projectId=${projectId}` : '/task';
-      const response = await axios.get(`${API_BASE_URL}${url}`, {
-        timeout: API_TIMEOUT,
-      });
-      return response.data as Task[];
-    } catch {
-      console.warn('API not available, using mock data');
+      console.log('Attempting API call to /Task');
+      const endpoint = projectId ? `/Task?projectId=${projectId}` : '/Task';
+      const response = await apiClient.get(endpoint);
+      console.log('API call successful, response:', response.status);
+      const tasks = response.data as Task[];
+      console.log('Tasks from API:', tasks.length);
+      
+      const filteredTasks = projectId 
+        ? tasks.filter(t => t.projectId === projectId)
+        : tasks;
+      
+      return filteredTasks;
+    } catch (error: any) {
+      console.error('API call failed:', error?.message || 'Unknown error');
+      console.error('Error details:', error?.response?.status, error?.response?.statusText);
+      console.warn('API not available, switching to mock data');
       useMockData = true;
-      return projectId 
+      
+      // Return mock data with fallback prefix
+      const filteredTasks = projectId 
         ? mockTasks.filter(t => t.projectId === projectId)
         : mockTasks;
+      
+      return filteredTasks.map(task => ({
+        ...task,
+        name: `[FALLBACK] ${task.name}`,
+        description: `${task.description} - API FAILED, USING FALLBACK`
+      }));
     }
   },
 
   async getTask(id: number): Promise<Task | null> {
+    console.log('=== GET TASK START ===');
+    console.log('getTask called with ID:', id);
+    console.log('useMockData status:', useMockData);
+    
     if (useMockData) {
+      console.log('Using mock data for getTask');
       const task = mockTasks.find(t => t.id === id);
+      console.log('Task found in mock data:', task ? task.name : 'NOT FOUND');
       return new Promise((resolve) => {
-        setTimeout(() => resolve(task || null), 500);
+        setTimeout(() => {
+          console.log('Returning task:', task);
+          resolve(task || null);
+        }, 500);
       });
     }
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/task/${id}`, {
-        timeout: API_TIMEOUT,
-      });
+      const response = await apiClient.get(`/Task/${id}`);
       return response.data as Task;
     } catch {
       console.warn('API not available, using mock data');
@@ -383,9 +479,7 @@ export const apiService = {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/task`, taskData, {
-        timeout: API_TIMEOUT,
-      });
+      const response = await apiClient.post('/Task', taskData);
       // Trigger dashboard refresh
       triggerDashboardRefresh();
       return response.data as Task;
@@ -421,9 +515,7 @@ export const apiService = {
     }
 
     try {
-      const response = await axios.put(`${API_BASE_URL}/task/${id}`, taskData, {
-        timeout: API_TIMEOUT,
-      });
+      const response = await apiClient.put(`/Task/${id}`, taskData);
       // Trigger dashboard refresh if status changed
       if (taskData.status) {
         triggerDashboardRefresh();
@@ -447,34 +539,54 @@ export const apiService = {
 
   // Delete a task
   async deleteTask(id: number): Promise<boolean> {
+    console.log('=== DELETE TASK START ===');
     console.log('deleteTask called with ID:', id);
+    console.log('useMockData status:', useMockData);
+    
     if (useMockData) {
       console.log('Using mock data for delete');
+      console.log('mockTasks length:', mockTasks.length);
+      console.log('mockTasks IDs:', mockTasks.map(t => t.id));
       const taskIndex = mockTasks.findIndex(t => t.id === id);
       console.log('Task index found:', taskIndex);
       if (taskIndex !== -1) {
+        const taskToDelete = mockTasks[taskIndex];
+        console.log('Deleting task:', taskToDelete.name);
         mockTasks.splice(taskIndex, 1);
         console.log('Task deleted from mock data. Remaining tasks:', mockTasks.length);
+        console.log('Remaining task IDs:', mockTasks.map(t => t.id));
         // Trigger dashboard refresh after deletion
         triggerDashboardRefresh();
+        console.log('=== DELETE TASK SUCCESS ===');
         return true;
       }
       console.log('Task not found in mock data');
+      console.log('=== DELETE TASK FAILED - TASK NOT FOUND ===');
       return false;
     }
 
+    // API mode - simulate successful deletion
+    console.log('API MODE: Simulating task deletion for ID:', id);
+    console.log('In real API mode, this would send DELETE request to /task/' + id);
+    
+    // Real API call
     try {
       console.log('Attempting API delete for task ID:', id);
-      await apiClient.delete(`/task/${id}`);
+      await apiClient.delete(`/Task/${id}`);
       console.log('API delete successful');
       // Trigger dashboard refresh after API deletion
       triggerDashboardRefresh();
       return true;
-    } catch (error) {
-      console.warn('API not available, using mock data', error);
+    } catch (error: any) {
+      console.error('API delete failed:', error?.message || 'Unknown error');
+      console.warn('API not available, switching to mock data');
       useMockData = true;
+      
       const taskIndex = mockTasks.findIndex(t => t.id === id);
       if (taskIndex !== -1) {
+        // Add fallback prefix to show this was a fallback deletion
+        const deletedTask = mockTasks[taskIndex];
+        console.log(`[FALLBACK] Deleting task: ${deletedTask.name}`);
         mockTasks.splice(taskIndex, 1);
         console.log('Task deleted from mock data after API failure');
         // Trigger dashboard refresh after fallback deletion
@@ -516,11 +628,13 @@ export const apiService = {
   // Utility function to check API status
   async checkApiStatus(): Promise<boolean> {
     try {
-      await axios.get(`${API_BASE_URL}/health`, { timeout: 2000 });
+      await axios.get(`${API_BASE_URL}/Project`, { timeout: 2000 });
       useMockData = false;
+      console.log('API is available, using real API');
       return true;
-    } catch {
+    } catch (error: any) {
       useMockData = true;
+      console.log('API not available, using mock data:', error?.message || 'Unknown error');
       return false;
     }
   },

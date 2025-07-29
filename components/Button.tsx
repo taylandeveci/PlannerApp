@@ -2,17 +2,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleSheet,
   Text,
   ViewStyle,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface ButtonProps {
@@ -37,28 +32,20 @@ export default function Button({
   gradient = true,
 }: ButtonProps) {
   const { theme } = useTheme();
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const scaleAnim = new Animated.Value(1);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.95, {
-      damping: 15,
-      stiffness: 300,
-    });
-    opacity.value = withTiming(0.8, { duration: 100 });
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 300,
-    });
-    opacity.value = withTiming(1, { duration: 100 });
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   const buttonStyle = [
@@ -95,7 +82,7 @@ export default function Button({
 
   if (variant === 'primary' && gradient) {
     return (
-      <Animated.View style={[animatedStyle, theme.shadows.medium]}>
+      <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, theme.shadows.medium]}>
         <Pressable
           onPress={onPress}
           onPressIn={handlePressIn}
@@ -121,7 +108,7 @@ export default function Button({
   }
 
   return (
-    <Animated.View style={[animatedStyle, theme.shadows.small]}>
+    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, theme.shadows.small]}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}

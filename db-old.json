@@ -1,0 +1,140 @@
+{
+  "project": [
+    {
+      "id": 1,
+      "name": "E-Commerce Platform",
+      "description": "Building a modern e-commerce platform with React Native",
+      "createdUserId": 1,
+      "createdDate": "2024-01-15T00:00:00.000Z",
+      "status": "Active",
+      "dueDate": "2024-06-30T00:00:00.000Z",
+      "priority": "High"
+    },
+    {
+      "id": 2,
+      "name": "Mobile Banking App",
+      "description": "Secure mobile banking application with biometric authentication",
+      "createdUserId": 1,
+      "createdDate": "2024-02-01T00:00:00.000Z",
+      "status": "Active",
+      "dueDate": "2024-08-15T00:00:00.000Z",
+      "priority": "High"
+    },
+    {
+      "id": 3,
+      "name": "Social Media Dashboard",
+      "description": "Analytics dashboard for social media management",
+      "createdUserId": 1,
+      "createdDate": "2024-01-10T00:00:00.000Z",
+      "status": "Completed",
+      "dueDate": "2024-03-30T00:00:00.000Z",
+      "priority": "Medium"
+    },
+    {
+      "id": 4,
+      "name": "Fitness Tracker",
+      "description": "Personal fitness and health tracking application",
+      "createdUserId": 1,
+      "createdDate": "2024-03-01T00:00:00.000Z",
+      "status": "Planning",
+      "dueDate": "2024-09-30T00:00:00.000Z",
+      "priority": "Low"
+    }
+  ],
+  "task": [
+    {
+      "id": 1,
+      "name": "Design User Authentication Flow",
+      "description": "Create wireframes and prototypes for user login and registration screens with social media integration",
+      "projectId": 1,
+      "priorityId": 3,
+      "authorId": 1,
+      "assignId": 1,
+      "estimatedTime": 8,
+      "dueDate": "2024-07-30T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-01-20T00:00:00.000Z",
+      "status": "in_progress",
+      "tags": ["design", "ux", "authentication"]
+    },
+    {
+      "id": 2,
+      "name": "Implement Payment Gateway",
+      "description": "Integrate Stripe payment system with proper error handling and security measures",
+      "projectId": 1,
+      "priorityId": 3,
+      "authorId": 1,
+      "assignId": 2,
+      "estimatedTime": 12,
+      "dueDate": "2024-08-15T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-01-25T00:00:00.000Z",
+      "status": "pending",
+      "tags": ["backend", "payment", "security"]
+    },
+    {
+      "id": 3,
+      "name": "Setup Database Schema",
+      "description": "Design and implement PostgreSQL database schema for user data and transactions",
+      "projectId": 1,
+      "priorityId": 3,
+      "authorId": 1,
+      "assignId": 1,
+      "estimatedTime": 6,
+      "dueDate": "2024-07-20T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-01-18T00:00:00.000Z",
+      "status": "completed",
+      "tags": ["database", "backend", "postgresql"]
+    },
+    {
+      "id": 4,
+      "name": "Biometric Authentication",
+      "description": "Implement fingerprint and face recognition for secure login",
+      "projectId": 2,
+      "priorityId": 3,
+      "authorId": 1,
+      "assignId": 3,
+      "estimatedTime": 16,
+      "dueDate": "2024-08-30T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-02-05T00:00:00.000Z",
+      "status": "in_progress",
+      "tags": ["security", "biometric", "mobile"]
+    },
+    {
+      "id": 5,
+      "name": "Transaction History UI",
+      "description": "Design and implement transaction history with filtering and search capabilities",
+      "projectId": 2,
+      "priorityId": 2,
+      "authorId": 1,
+      "assignId": 2,
+      "estimatedTime": 10,
+      "dueDate": "2024-09-10T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-02-10T00:00:00.000Z",
+      "status": "pending",
+      "tags": ["ui", "transactions", "frontend"]
+    },
+    {
+      "id": 6,
+      "name": "Real-time Analytics",
+      "description": "Implement real-time analytics dashboard with charts and metrics",
+      "projectId": 3,
+      "priorityId": 1,
+      "authorId": 1,
+      "assignId": 1,
+      "estimatedTime": 14,
+      "dueDate": "2024-03-25T00:00:00.000Z",
+      "createdUserId": 1,
+      "createdDate": "2024-01-12T00:00:00.000Z",
+      "status": "completed",
+      "tags": ["analytics", "dashboard", "realtime"]
+    }
+  ],
+  "health": {
+    "status": "ok",
+    "timestamp": "2024-07-29T12:00:00.000Z"
+  }
+}
