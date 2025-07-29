@@ -103,38 +103,40 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { color: theme.colors.text, marginBottom: theme.spacing.md }]}>
             Quick Stats
           </Text>
-          <View style={styles.statsGrid}>
-            <StatCard
-              title="Projects"
-              value={stats?.totalProjects || 0}
-              icon={<Ionicons name="folder-outline" size={24} color={theme.colors.primary} />}
-              onPress={() => router.push('/(tabs)/projects')}
-              style={styles.statCard}
-            />
+          <View style={styles.statsContainer}>
+            <View style={styles.statsRow}>
+              <StatCard
+                title="Projects"
+                value={stats?.totalProjects || 0}
+                icon={<Ionicons name="folder-outline" size={24} color={theme.colors.primary} />}
+                onPress={() => router.push('/(tabs)/projects')}
+                style={styles.statCard}
+              />
 
-            <StatCard
-              title="Tasks"
-              value={stats?.totalTasks || 0}
-              icon={<Ionicons name="checkmark-circle-outline" size={24} color={theme.colors.success} />}
-              onPress={() => router.push('/(tabs)/tasks')}
-              style={styles.statCard}
-            />
-          </View>
+              <StatCard
+                title="Tasks"
+                value={stats?.totalTasks || 0}
+                icon={<Ionicons name="checkmark-circle-outline" size={24} color={theme.colors.success} />}
+                onPress={() => router.push('/(tabs)/tasks')}
+                style={styles.statCard}
+              />
+            </View>
 
-          <View style={styles.statsGrid}>
-            <StatCard
-              title="Pending"
-              value={stats?.pendingTasks || 0}
-              icon={<Ionicons name="time-outline" size={24} color={theme.colors.warning} />}
-              style={styles.statCard}
-            />
+            <View style={styles.statsRow}>
+              <StatCard
+                title="Pending"
+                value={stats?.pendingTasks || 0}
+                icon={<Ionicons name="time-outline" size={24} color={theme.colors.warning} />}
+                style={styles.statCard}
+              />
 
-            <StatCard
-              title="Overdue"
-              value={stats?.overdueTasks || 0}
-              icon={<Ionicons name="alert-circle-outline" size={24} color={theme.colors.error} />}
-              style={styles.statCard}
-            />
+              <StatCard
+                title="Overdue"
+                value={stats?.overdueTasks || 0}
+                icon={<Ionicons name="alert-circle-outline" size={24} color={theme.colors.error} />}
+                style={styles.statCard}
+              />
+            </View>
           </View>
         </View>
 
@@ -302,6 +304,13 @@ const styles = StyleSheet.create({
   seeAll: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  statsContainer: {
+    gap: 12,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   statsGrid: {
     flexDirection: 'row',

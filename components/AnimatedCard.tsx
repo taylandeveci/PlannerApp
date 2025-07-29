@@ -50,7 +50,7 @@ export function StatCard({ title, value, icon, onPress, style }: StatCardProps) 
   const { theme } = useTheme();
 
   const content = (
-    <View style={[styles.statContent, style]}>
+    <View style={styles.statContent}>
       <View style={styles.statIcon}>
         {icon}
       </View>
@@ -63,7 +63,7 @@ export function StatCard({ title, value, icon, onPress, style }: StatCardProps) 
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.8 }]}>
+      <Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.8 }, style]}>
         <Card style={styles.statCard}>
           {content}
         </Card>
@@ -72,20 +72,24 @@ export function StatCard({ title, value, icon, onPress, style }: StatCardProps) 
   }
 
   return (
-    <Card style={styles.statCard}>
-      {content}
-    </Card>
+    <View style={style}>
+      <Card style={styles.statCard}>
+        {content}
+      </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   statCard: {
-    flex: 1,
+    height: 80,
+    justifyContent: 'center',
   },
   statContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   statIcon: {
     marginRight: 12,
