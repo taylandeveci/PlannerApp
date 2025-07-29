@@ -3,12 +3,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../../components/Header';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiService } from '../../../lib/apiService';
 import { Project, Task } from '../../../types/api';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { theme } = useTheme();
   const [task, setTask] = useState<Task | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,10 +111,10 @@ export default function TaskDetailScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed': return '#4CAF50';
-      case 'in_progress': return '#2196F3';
-      case 'pending': return '#FF9800';
-      default: return '#757575';
+      case 'completed': return theme.colors.success;
+      case 'in_progress': return theme.colors.primary;
+      case 'pending': return theme.colors.warning;
+      default: return theme.colors.textSecondary;
     }
   };
 
@@ -127,10 +129,10 @@ export default function TaskDetailScreen() {
 
   const getPriorityColor = (priorityId: number) => {
     switch (priorityId) {
-      case 3: return '#F44336'; // High
-      case 2: return '#FF9800'; // Medium
-      case 1: return '#4CAF50'; // Low
-      default: return '#757575';
+      case 3: return theme.colors.error; // High
+      case 2: return theme.colors.warning; // Medium
+      case 1: return theme.colors.success; // Low
+      default: return theme.colors.textSecondary;
     }
   };
 
@@ -158,12 +160,12 @@ export default function TaskDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar backgroundColor="#2196F3" barStyle="light-content" />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar backgroundColor={theme.colors.primary} barStyle={theme.colors.statusBar} />
         <Header title="Task Details" />
         <View style={styles.centered}>
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading task details...</Text>
+            <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading task details...</Text>
           </View>
         </View>
       </View>
@@ -172,15 +174,15 @@ export default function TaskDetailScreen() {
 
   if (!task) {
     return (
-      <View style={styles.container}>
-        <StatusBar backgroundColor="#2196F3" barStyle="light-content" />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar backgroundColor={theme.colors.primary} barStyle={theme.colors.statusBar} />
         <Header title="Task Details" />
         <View style={styles.centered}>
           <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={64} color="#666" />
-            <Text style={styles.errorText}>Task not found</Text>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backButtonText}>Go Back</Text>
+            <Ionicons name="alert-circle-outline" size={64} color={theme.colors.textSecondary} />
+            <Text style={[styles.errorText, { color: theme.colors.text }]}>Task not found</Text>
+            <TouchableOpacity style={[styles.backButton, { backgroundColor: theme.colors.primary }]} onPress={() => router.back()}>
+              <Text style={[styles.backButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Go Back</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -189,8 +191,8 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="#2196F3" barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle={theme.colors.statusBar} />
       <Header 
         title="Task Details" 
         rightButton={{
@@ -206,8 +208,8 @@ export default function TaskDetailScreen() {
         }
       >
         {/* Task Header */}
-        <View style={styles.headerCard}>
-          <Text style={styles.title}>{task.name}</Text>
+        <View style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{task.name}</Text>
           
           <View style={styles.metaInfo}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) + '20' }]}>
@@ -238,24 +240,25 @@ export default function TaskDetailScreen() {
 
         {/* Description */}
         {task.description && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>{task.description}</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Description</Text>
+            <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{task.description}</Text>
           </View>
         )}
 
         {/* Task Details */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Task Information</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Task Information</Text>
           
           {task.dueDate && (
-            <View style={styles.detailItem}>
-              <Ionicons name="calendar-outline" size={20} color="#666" />
+            <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.textSecondary} />
               <View style={styles.detailText}>
-                <Text style={styles.detailLabel}>Due Date</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Due Date</Text>
                 <Text style={[
                   styles.detailValue,
-                  isOverdue(task.dueDate) && { color: '#F44336', fontWeight: 'bold' }
+                  { color: theme.colors.text },
+                  isOverdue(task.dueDate) && { color: theme.colors.error, fontWeight: 'bold' }
                 ]}>
                   {formatDate(task.dueDate)}
                   {isOverdue(task.dueDate) && ' OVERDUE'}
@@ -265,52 +268,52 @@ export default function TaskDetailScreen() {
           )}
 
           {task.estimatedTime && (
-            <View style={styles.detailItem}>
-              <Ionicons name="time-outline" size={20} color="#666" />
+            <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="time-outline" size={20} color={theme.colors.textSecondary} />
               <View style={styles.detailText}>
-                <Text style={styles.detailLabel}>Estimated Time</Text>
-                <Text style={styles.detailValue}>{task.estimatedTime} hours</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Estimated Time</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{task.estimatedTime} hours</Text>
               </View>
             </View>
           )}
 
-          <View style={styles.detailItem}>
-            <Ionicons name="person-outline" size={20} color="#666" />
+          <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+            <Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
             <View style={styles.detailText}>
-              <Text style={styles.detailLabel}>Assigned To</Text>
-              <Text style={styles.detailValue}>User {task.assignId}</Text>
+              <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Assigned To</Text>
+              <Text style={[styles.detailValue, { color: theme.colors.text }]}>User {task.assignId}</Text>
             </View>
           </View>
 
           {project && (
-            <View style={styles.detailItem}>
-              <Ionicons name="folder-outline" size={20} color="#666" />
+            <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="folder-outline" size={20} color={theme.colors.textSecondary} />
               <View style={styles.detailText}>
-                <Text style={styles.detailLabel}>Project</Text>
-                <Text style={styles.detailValue}>{project.name}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Project</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{project.name}</Text>
               </View>
             </View>
           )}
 
           {task.completedDate && (
-            <View style={styles.detailItem}>
-              <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
+            <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="checkmark-circle-outline" size={20} color={theme.colors.success} />
               <View style={styles.detailText}>
-                <Text style={styles.detailLabel}>Completed Date</Text>
-                <Text style={styles.detailValue}>{formatDate(task.completedDate)}</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Completed Date</Text>
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>{formatDate(task.completedDate)}</Text>
               </View>
             </View>
           )}
 
           {task.tags && task.tags.length > 0 && (
-            <View style={styles.detailItem}>
-              <Ionicons name="pricetag-outline" size={20} color="#666" />
+            <View style={[styles.detailItem, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="pricetag-outline" size={20} color={theme.colors.textSecondary} />
               <View style={styles.detailText}>
-                <Text style={styles.detailLabel}>Tags</Text>
+                <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Tags</Text>
                 <View style={styles.tagsContainer}>
                   {task.tags.map((tag, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{tag}</Text>
+                    <View key={index} style={[styles.tag, { backgroundColor: theme.colors.primary + '20' }]}>
+                      <Text style={[styles.tagText, { color: theme.colors.primary }]}>{tag}</Text>
                     </View>
                   ))}
                 </View>
@@ -320,53 +323,53 @@ export default function TaskDetailScreen() {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
           <View style={styles.actionButtons}>
             {task.status !== 'pending' && (
               <TouchableOpacity
-                style={[styles.actionButton, styles.pendingButton]}
+                style={[styles.actionButton, { backgroundColor: theme.colors.warning }]}
                 onPress={() => updateTaskStatus('pending')}
               >
-                <Ionicons name="pause-circle-outline" size={20} color="#fff" />
-                <Text style={styles.actionButtonText}>Mark Pending</Text>
+                <Ionicons name="pause-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+                <Text style={[styles.actionButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Mark Pending</Text>
               </TouchableOpacity>
             )}
             
             {task.status !== 'in_progress' && (
               <TouchableOpacity
-                style={[styles.actionButton, styles.progressButton]}
+                style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
                 onPress={() => updateTaskStatus('in_progress')}
               >
-                <Ionicons name="play-circle-outline" size={20} color="#fff" />
-                <Text style={styles.actionButtonText}>Start Task</Text>
+                <Ionicons name="play-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+                <Text style={[styles.actionButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Start Task</Text>
               </TouchableOpacity>
             )}
             
             {task.status !== 'completed' && (
               <TouchableOpacity
-                style={[styles.actionButton, styles.completeButton]}
+                style={[styles.actionButton, { backgroundColor: theme.colors.success }]}
                 onPress={() => updateTaskStatus('completed')}
               >
-                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.actionButtonText}>Complete</Text>
+                <Ionicons name="checkmark-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+                <Text style={[styles.actionButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Complete</Text>
               </TouchableOpacity>
             )}
             
             <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
+              style={[styles.actionButton, { backgroundColor: theme.colors.textSecondary }]}
               onPress={() => router.push(`/tasks/edit/${task.id}` as any)}
             >
-              <Ionicons name="pencil-outline" size={20} color="#fff" />
-              <Text style={styles.actionButtonText}>Edit</Text>
+              <Ionicons name="pencil-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+              <Text style={[styles.actionButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Edit</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
+              style={[styles.actionButton, { backgroundColor: theme.colors.error }]}
               onPress={deleteTask}
             >
-              <Ionicons name="trash-outline" size={20} color="#fff" />
-              <Text style={styles.actionButtonText}>Delete</Text>
+              <Ionicons name="trash-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+              <Text style={[styles.actionButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -378,7 +381,6 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   centered: {
     flex: 1,
@@ -391,7 +393,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
     marginTop: 10,
   },
   errorContainer: {
@@ -400,18 +401,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: '#666',
     marginTop: 15,
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#2196F3',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   backButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -419,11 +417,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerCard: {
-    backgroundColor: '#fff',
     margin: 16,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -432,7 +428,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 16,
     lineHeight: 30,
   },
@@ -469,12 +464,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: '#fff',
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -483,12 +476,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    color: '#666',
     lineHeight: 24,
   },
   detailItem: {
@@ -497,7 +488,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   detailText: {
     flex: 1,
@@ -505,12 +495,10 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   detailValue: {
     fontSize: 16,
-    color: '#333',
     fontWeight: '500',
   },
   tagsContainer: {
@@ -520,14 +508,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tag: {
-    backgroundColor: '#f0f0f0',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   tagText: {
     fontSize: 12,
-    color: '#666',
     fontWeight: '500',
   },
   actionButtons: {
@@ -546,23 +532,7 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: '48%',
   },
-  pendingButton: {
-    backgroundColor: '#FF9800',
-  },
-  progressButton: {
-    backgroundColor: '#2196F3',
-  },
-  completeButton: {
-    backgroundColor: '#4CAF50',
-  },
-  editButton: {
-    backgroundColor: '#6c757d',
-  },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-  },
   actionButtonText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,

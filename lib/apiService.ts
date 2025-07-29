@@ -4,6 +4,19 @@ import { Project, Task } from '../types/api';
 const API_BASE_URL = 'http://localhost:5144/api';
 const API_TIMEOUT = 5000;
 
+// Dashboard refresh callback system
+let dashboardRefreshCallback: (() => void) | null = null;
+
+export const setDashboardRefreshCallback = (callback: () => void) => {
+  dashboardRefreshCallback = callback;
+};
+
+const triggerDashboardRefresh = () => {
+  if (dashboardRefreshCallback) {
+    dashboardRefreshCallback();
+  }
+};
+
 // Configure axios for your API server
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -223,6 +236,8 @@ export const apiService = {
         createdDate: new Date().toISOString(),
       };
       mockProjects.push(newProject);
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return new Promise((resolve) => {
         setTimeout(() => resolve(newProject), 500);
       });
@@ -230,6 +245,8 @@ export const apiService = {
 
     try {
       const response = await apiClient.post('/project', projectData);
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return response.data as Project;
     } catch {
       console.warn('API not available, using mock data');
@@ -240,6 +257,8 @@ export const apiService = {
         createdDate: new Date().toISOString(),
       };
       mockProjects.push(newProject);
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return newProject;
     }
   },
@@ -356,6 +375,8 @@ export const apiService = {
         createdDate: new Date().toISOString(),
       };
       mockTasks.push(newTask);
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return new Promise((resolve) => {
         setTimeout(() => resolve(newTask), 500);
       });
@@ -365,6 +386,8 @@ export const apiService = {
       const response = await axios.post(`${API_BASE_URL}/task`, taskData, {
         timeout: API_TIMEOUT,
       });
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return response.data as Task;
     } catch {
       console.warn('API not available, using mock data');
@@ -375,6 +398,8 @@ export const apiService = {
         createdDate: new Date().toISOString(),
       };
       mockTasks.push(newTask);
+      // Trigger dashboard refresh
+      triggerDashboardRefresh();
       return newTask;
     }
   },
@@ -384,6 +409,10 @@ export const apiService = {
       const taskIndex = mockTasks.findIndex(t => t.id === id);
       if (taskIndex !== -1) {
         mockTasks[taskIndex] = { ...mockTasks[taskIndex], ...taskData };
+        // Trigger dashboard refresh if status changed
+        if (taskData.status) {
+          triggerDashboardRefresh();
+        }
         return new Promise((resolve) => {
           setTimeout(() => resolve(mockTasks[taskIndex]), 500);
         });
@@ -395,6 +424,10 @@ export const apiService = {
       const response = await axios.put(`${API_BASE_URL}/task/${id}`, taskData, {
         timeout: API_TIMEOUT,
       });
+      // Trigger dashboard refresh if status changed
+      if (taskData.status) {
+        triggerDashboardRefresh();
+      }
       return response.data as Task;
     } catch {
       console.warn('API not available, using mock data');
@@ -402,6 +435,10 @@ export const apiService = {
       const taskIndex = mockTasks.findIndex(t => t.id === id);
       if (taskIndex !== -1) {
         mockTasks[taskIndex] = { ...mockTasks[taskIndex], ...taskData };
+        // Trigger dashboard refresh if status changed
+        if (taskData.status) {
+          triggerDashboardRefresh();
+        }
         return mockTasks[taskIndex];
       }
       return null;
@@ -418,6 +455,8 @@ export const apiService = {
       if (taskIndex !== -1) {
         mockTasks.splice(taskIndex, 1);
         console.log('Task deleted from mock data. Remaining tasks:', mockTasks.length);
+        // Trigger dashboard refresh after deletion
+        triggerDashboardRefresh();
         return true;
       }
       console.log('Task not found in mock data');
@@ -428,6 +467,8 @@ export const apiService = {
       console.log('Attempting API delete for task ID:', id);
       await apiClient.delete(`/task/${id}`);
       console.log('API delete successful');
+      // Trigger dashboard refresh after API deletion
+      triggerDashboardRefresh();
       return true;
     } catch (error) {
       console.warn('API not available, using mock data', error);
@@ -436,6 +477,8 @@ export const apiService = {
       if (taskIndex !== -1) {
         mockTasks.splice(taskIndex, 1);
         console.log('Task deleted from mock data after API failure');
+        // Trigger dashboard refresh after fallback deletion
+        triggerDashboardRefresh();
         return true;
       }
       console.log('Task not found in mock data after API failure');

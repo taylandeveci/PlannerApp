@@ -3,26 +3,74 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Header from '../../../components/Header';
+import LoadingAnimation from '../../../components/LoadingAnimation';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiService } from '../../../lib/apiService';
 
 export default function CreateTaskScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [taskData, setTaskData] = useState({
     name: '',
     description: '',
-    projectId: 1, // Default project
+    projectId: '', // Empty initially to show placeholder
     priorityId: 2, // Default priority (medium)
     authorId: 1, // Current user
-    assignId: 1, // Assigned to current user
+    assignId: '', // Empty initially to show placeholder
     estimatedTime: 0,
     dueDate: '',
     status: 'pending'
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    name: '',
+    projectId: '',
+    assignId: '',
+    dueDate: ''
+  });
+
+  const validateDueDate = (date: string) => {
+    if (!date) return true; // Optional field
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return dateRegex.test(date);
+  };
+
+  const clearError = (field: string) => {
+    setErrors(prev => ({ ...prev, [field]: '' }));
+  };
 
   const createTask = async () => {
+    // Clear previous errors
+    setErrors({
+      name: '',
+      projectId: '',
+      assignId: '',
+      dueDate: ''
+    });
+
+    let hasError = false;
+
     if (!taskData.name.trim()) {
-      Alert.alert('Error', 'Please enter a task name');
+      setErrors(prev => ({ ...prev, name: 'Task name is required' }));
+      hasError = true;
+    }
+
+    if (!taskData.projectId || parseInt(taskData.projectId.toString()) < 1) {
+      setErrors(prev => ({ ...prev, projectId: 'Please enter a valid project ID (minimum 1)' }));
+      hasError = true;
+    }
+
+    if (!taskData.assignId || parseInt(taskData.assignId.toString()) < 1) {
+      setErrors(prev => ({ ...prev, assignId: 'Please enter a valid user ID (minimum 1)' }));
+      hasError = true;
+    }
+
+    if (taskData.dueDate && !validateDueDate(taskData.dueDate)) {
+      setErrors(prev => ({ ...prev, dueDate: 'Please enter date in YYYY-MM-DD format' }));
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
@@ -30,6 +78,8 @@ export default function CreateTaskScreen() {
     try {
       await apiService.createTask({
         ...taskData,
+        projectId: parseInt(taskData.projectId.toString()) || 1,
+        assignId: parseInt(taskData.assignId.toString()) || 1,
         createdUserId: 1 // Current user
       });
       Alert.alert('Success', 'Task created successfully');
@@ -42,6 +92,8 @@ export default function CreateTaskScreen() {
     }
   };
 
+  
+
   const updateTaskData = (field: string, value: string | number) => {
     setTaskData(prev => ({
       ...prev,
@@ -50,7 +102,7 @@ export default function CreateTaskScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Header 
         title="Create Task" 
         rightButton={{
@@ -59,22 +111,36 @@ export default function CreateTaskScreen() {
         }}
       />
       
-      <ScrollView style={styles.content}>
+      <ScrollView style={[styles.content, { backgroundColor: theme.colors.background }]}>
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Task Name *</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Task Name *</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input, 
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+              errors.name && { borderColor: theme.colors.error, borderWidth: 2 }
+            ]}
             placeholder="Enter task name"
+            placeholderTextColor={theme.colors.textSecondary}
             value={taskData.name}
-            onChangeText={(text) => updateTaskData('name', text)}
+            onChangeText={(text) => {
+              updateTaskData('name', text);
+              if (errors.name) clearError('name');
+            }}
           />
+          {errors.name ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.name}</Text> : null}
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Description</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Description</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[
+              styles.input, 
+              styles.textArea,
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }
+            ]}
             placeholder="Enter task description"
+            placeholderTextColor={theme.colors.textSecondary}
             value={taskData.description}
             onChangeText={(text) => updateTaskData('description', text)}
             multiline
@@ -84,31 +150,51 @@ export default function CreateTaskScreen() {
 
         <View style={styles.row}>
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Project ID</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Project ID</Text>
             <TextInput
-              style={styles.input}
-              placeholder="1"
+              style={[
+                styles.input, 
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+                errors.projectId && { borderColor: theme.colors.error, borderWidth: 2 }
+              ]}
+              placeholder="Enter project ID (minimum 1)"
+              placeholderTextColor={theme.colors.textSecondary}
               value={taskData.projectId.toString()}
-              onChangeText={(text) => updateTaskData('projectId', parseInt(text) || 1)}
+              onChangeText={(text) => {
+                // Allow empty string to show placeholder
+                if (text === '') {
+                  updateTaskData('projectId', '');
+                  if (errors.projectId) clearError('projectId');
+                  return;
+                }
+                const num = parseInt(text);
+                if (!isNaN(num) && num >= 1) {
+                  updateTaskData('projectId', text);
+                  if (errors.projectId) clearError('projectId');
+                }
+              }}
               keyboardType="numeric"
             />
+            {errors.projectId ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.projectId}</Text> : null}
           </View>
 
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Priority</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Priority</Text>
             <View style={styles.priorityButtons}>
               {[1, 2, 3].map((priority) => (
                 <TouchableOpacity
                   key={priority}
                   style={[
                     styles.priorityButton,
-                    taskData.priorityId === priority && styles.selectedPriority
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                    taskData.priorityId === priority && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }
                   ]}
                   onPress={() => updateTaskData('priorityId', priority)}
                 >
                   <Text style={[
                     styles.priorityButtonText,
-                    taskData.priorityId === priority && styles.selectedPriorityText
+                    { color: theme.colors.text },
+                    taskData.priorityId === priority && { color: theme.isDark ? theme.colors.text : '#ffffff' }
                   ]}>
                     {priority === 1 ? 'Low' : priority === 2 ? 'Med' : 'High'}
                   </Text>
@@ -120,53 +206,98 @@ export default function CreateTaskScreen() {
 
         <View style={styles.row}>
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Estimated Hours</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Estimated Hours</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text }
+              ]}
               placeholder="0"
+              placeholderTextColor={theme.colors.textSecondary}
               value={taskData.estimatedTime.toString()}
-              onChangeText={(text) => updateTaskData('estimatedTime', parseFloat(text) || 0)}
+              onChangeText={(text) => {
+                // Only allow numbers and decimal point
+                const filteredText = text.replace(/[^0-9.]/g, '');
+                // Prevent multiple decimal points
+                const parts = filteredText.split('.');
+                if (parts.length > 2) {
+                  return; // Don't update if more than one decimal point
+                }
+                updateTaskData('estimatedTime', parseFloat(filteredText) || 0);
+              }}
               keyboardType="numeric"
             />
           </View>
 
           <View style={[styles.formGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Assign To (User ID)</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Assign To (User ID)</Text>
             <TextInput
-              style={styles.input}
-              placeholder="1"
+              style={[
+                styles.input, 
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+                errors.assignId && { borderColor: theme.colors.error, borderWidth: 2 }
+              ]}
+              placeholder="Enter user ID (minimum 1)"
+              placeholderTextColor={theme.colors.textSecondary}
               value={taskData.assignId.toString()}
-              onChangeText={(text) => updateTaskData('assignId', parseInt(text) || 1)}
+              onChangeText={(text) => {
+                // Allow empty string to show placeholder
+                if (text === '') {
+                  updateTaskData('assignId', '');
+                  if (errors.assignId) clearError('assignId');
+                  return;
+                }
+                const num = parseInt(text);
+                if (!isNaN(num) && num >= 1) {
+                  updateTaskData('assignId', text);
+                  if (errors.assignId) clearError('assignId');
+                }
+              }}
               keyboardType="numeric"
             />
+            {errors.assignId ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.assignId}</Text> : null}
           </View>
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Due Date</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Due Date</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, color: theme.colors.text },
+              errors.dueDate && { borderColor: theme.colors.error, borderWidth: 2 }
+            ]}
             placeholder="YYYY-MM-DD (optional)"
+            placeholderTextColor={theme.colors.textSecondary}
             value={taskData.dueDate}
-            onChangeText={(text) => updateTaskData('dueDate', text)}
+            onChangeText={(text) => {
+              // Only allow numbers and hyphens
+              const filteredText = text.replace(/[^0-9-]/g, '');
+              updateTaskData('dueDate', filteredText);
+              if (errors.dueDate) clearError('dueDate');
+            }}
+            keyboardType="numeric"
           />
+          {errors.dueDate ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.dueDate}</Text> : null}
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Status</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Status</Text>
           <View style={styles.statusButtons}>
             {['pending', 'in_progress', 'completed'].map((status) => (
               <TouchableOpacity
                 key={status}
                 style={[
                   styles.statusButton,
-                  taskData.status === status && styles.selectedStatus
+                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                  taskData.status === status && { backgroundColor: theme.colors.success, borderColor: theme.colors.success }
                 ]}
                 onPress={() => updateTaskData('status', status)}
               >
                 <Text style={[
                   styles.statusButtonText,
-                  taskData.status === status && styles.selectedStatusText
+                  { color: theme.colors.text },
+                  taskData.status === status && { color: theme.isDark ? theme.colors.text : '#ffffff' }
                 ]}>
                   {status.replace('_', ' ').toUpperCase()}
                 </Text>
@@ -175,13 +306,21 @@ export default function CreateTaskScreen() {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.createButton, loading && styles.disabledButton]}
+        <TouchableOpacity
+          style={[
+            styles.createButton,
+            { backgroundColor: theme.colors.primary },
+            loading && { backgroundColor: theme.colors.textSecondary }
+          ]}
           onPress={createTask}
           disabled={loading}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={styles.createButtonText}>
+          {loading ? (
+            <LoadingAnimation size="small" color={theme.isDark ? theme.colors.text : '#ffffff'} />
+          ) : (
+            <Ionicons name="add-circle-outline" size={20} color={theme.isDark ? theme.colors.text : '#ffffff'} />
+          )}
+          <Text style={[styles.createButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>
             {loading ? 'Creating Task...' : 'Create Task'}
           </Text>
         </TouchableOpacity>
@@ -193,7 +332,6 @@ export default function CreateTaskScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     padding: 16,
@@ -204,17 +342,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   textArea: {
     height: 100,
@@ -235,24 +370,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     marginHorizontal: 2,
     alignItems: 'center',
-  },
-  selectedPriority: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   priorityButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
-  },
-  selectedPriorityText: {
-    color: '#fff',
   },
   statusButtons: {
     flexDirection: 'row',
@@ -262,41 +387,31 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     marginHorizontal: 2,
     alignItems: 'center',
-  },
-  selectedStatus: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
   },
   statusButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
-  },
-  selectedStatusText: {
-    color: '#fff',
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 24,
   },
-  disabledButton: {
-    backgroundColor: '#999',
-  },
   createButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });

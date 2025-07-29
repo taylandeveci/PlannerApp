@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Header from '../../../components/Header';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { apiService } from '../../../lib/apiService';
 
 export default function ProjectFormScreen() {
@@ -12,6 +13,7 @@ export default function ProjectFormScreen() {
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleCreateProject = async () => {
     if (!projectData.name.trim()) {
@@ -45,7 +47,7 @@ export default function ProjectFormScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Header 
         title="Create Project" 
         rightButton={{
@@ -54,32 +56,42 @@ export default function ProjectFormScreen() {
         }}
       />
       
-      <ScrollView style={styles.content}>
+      <ScrollView style={[styles.content, { backgroundColor: theme.colors.background }]}>
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Project Name *</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Project Name *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: theme.colors.surface,
+              color: theme.colors.text,
+              borderColor: theme.colors.border
+            }]}
             placeholder="Enter project name"
+            placeholderTextColor={theme.colors.textSecondary}
             value={projectData.name}
             onChangeText={(text) => setProjectData(prev => ({ ...prev, name: text }))}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Status</Text>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Status</Text>
           <View style={styles.statusButtons}>
             {['Active', 'Inactive', 'Completed'].map((status) => (
               <TouchableOpacity
                 key={status}
                 style={[
                   styles.statusButton,
-                  projectData.status === status && styles.selectedStatus
+                  { 
+                    backgroundColor: projectData.status === status ? theme.colors.primary : theme.colors.surface,
+                    borderColor: theme.colors.border 
+                  }
                 ]}
                 onPress={() => setProjectData(prev => ({ ...prev, status }))}
               >
                 <Text style={[
                   styles.statusButtonText,
-                  projectData.status === status && styles.selectedStatusText
+                  { 
+                    color: projectData.status === status ? '#fff' : theme.colors.text 
+                  }
                 ]}>
                   {status}
                 </Text>
@@ -89,7 +101,11 @@ export default function ProjectFormScreen() {
         </View>
 
         <TouchableOpacity 
-          style={[styles.createButton, loading && styles.disabledButton]}
+          style={[
+            styles.createButton, 
+            { backgroundColor: loading ? theme.colors.textSecondary : theme.colors.primary },
+            loading && styles.disabledButton
+          ]}
           onPress={handleCreateProject}
           disabled={loading}
         >
@@ -106,7 +122,6 @@ export default function ProjectFormScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     padding: 16,
@@ -117,17 +132,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   statusButtons: {
     flexDirection: 'row',
@@ -137,36 +149,25 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     marginHorizontal: 2,
     alignItems: 'center',
-  },
-  selectedStatus: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
   },
   statusButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
-  },
-  selectedStatusText: {
-    color: '#fff',
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 24,
   },
   disabledButton: {
-    backgroundColor: '#999',
+    opacity: 0.6,
   },
   createButtonText: {
     color: '#fff',

@@ -2,12 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,19 +36,20 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Ionicons name="clipboard-outline" size={60} color="#007AFF" />
-        <Text style={styles.title}>PlannerApp</Text>
-        <Text style={styles.subtitle}>Sign in to manage your projects</Text>
+        <Ionicons name="clipboard-outline" size={60} color={theme.colors.primary} />
+        <Text style={[styles.title, { color: theme.colors.text }]}>PlannerApp</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Sign in to manage your projects</Text>
       </View>
 
       <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+        <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, shadowColor: theme.isDark ? '#FFFFFF' : '#000000' }]}>
+          <Ionicons name="mail-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.colors.text }]}
             placeholder="Email"
+            placeholderTextColor={theme.colors.textSecondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -55,11 +58,12 @@ export default function LoginScreen() {
           />
         </View>
 
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+        <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, shadowColor: theme.isDark ? '#FFFFFF' : '#000000' }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.colors.text }]}
             placeholder="Password"
+            placeholderTextColor={theme.colors.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -68,24 +72,24 @@ export default function LoginScreen() {
         </View>
 
         <TouchableOpacity 
-          style={styles.loginButton} 
+          style={[styles.loginButton, { backgroundColor: theme.colors.primary }]} 
           onPress={handleLogin}
           disabled={loading}
         >
-          <Text style={styles.loginButtonText}>
+          <Text style={[styles.loginButtonText, { color: theme.isDark ? theme.colors.text : '#ffffff' }]}>
             {loading ? 'Signing in...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Don&apos;t have an account?</Text>
+        <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>Don&apos;t have an account?</Text>
         <TouchableOpacity>
-          <Text style={styles.signUpText}>Sign Up</Text>
+          <Text style={[styles.signUpText, { color: theme.colors.primary }]}>Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -95,7 +99,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
@@ -106,13 +109,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
   form: {
@@ -121,16 +122,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
     elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderWidth: 1,
   },
   inputIcon: {
     marginRight: 12,
@@ -139,17 +139,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     paddingVertical: 16,
-    color: '#333',
   },
   loginButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   loginButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -158,7 +155,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   forgotPasswordText: {
-    color: '#007AFF',
     fontSize: 14,
   },
   footer: {
@@ -167,11 +163,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    color: '#666',
     fontSize: 14,
   },
   signUpText: {
-    color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,

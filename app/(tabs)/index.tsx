@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AnimatedCard, { StatCard } from '../../components/AnimatedCard';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
 import Header from '../../components/Header';
-import { apiService } from '../../lib/apiService';
+import { useTheme } from '../../contexts/ThemeContext';
+import { apiService, setDashboardRefreshCallback } from '../../lib/apiService';
 import { DashboardStats, Project, Task } from '../../types/api';
 
 export default function HomeScreen() {
+  const { theme, toggleTheme, isDarkMode } = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
@@ -22,9 +27,7 @@ export default function HomeScreen() {
       ]);
       
       setStats(dashboardStats);
-      // Get 5 most recent tasks
       setRecentTasks(tasks.slice(0, 5));
-      // Get 3 most recent projects
       setRecentProjects(projects.slice(0, 3));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -37,283 +40,238 @@ export default function HomeScreen() {
 
   useEffect(() => {
     fetchDashboardData();
+    setDashboardRefreshCallback(() => {
+      fetchDashboardData();
+    });
+    
+    return () => {
+      setDashboardRefreshCallback(() => {});
+    };
   }, [fetchDashboardData]);
 
-  const onRefresh = useCallback(() => {
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [fetchDashboardData])
+  );
+
+  const onRefresh = () => {
     setRefreshing(true);
     fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed': return '#4CAF50';
-      case 'in_progress': return '#2196F3';
-      case 'pending': return '#FF9800';
-      case 'active': return '#4CAF50';
-      case 'on_hold': return '#FF9800';
-      case 'planning': return '#9C27B0';
-      default: return '#757575';
-    }
-  };
-  const getPriorityColor = (priorityId: number) => {
-    switch (priorityId) {
-      case 3: return '#F44336'; // High
-      case 2: return '#FF9800'; // Medium
-      case 1: return '#4CAF50'; // Low
-      default: return '#757575';
-    }
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays} days ago`;
-    
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const renderTaskItem = ({ item }: { item: Task }) => (
-    <TouchableOpacity
-      style={styles.taskItem}
-      onPress={() => router.push(`/tasks/${item.id}` as any)}
-    >
-      <View style={styles.taskHeader}>
-        <View style={styles.taskInfo}>
-          <Text style={styles.taskTitle} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.taskMeta}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-            <Text style={styles.statusText}>{item.status.replace('_', ' ')}</Text>
-            <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priorityId) }]} />
-          </View>
-        </View>
-        <View style={styles.taskActions}>
-          {item.dueDate && (
-            <Text style={styles.dueDate}>{formatDate(item.dueDate)}</Text>
-          )}
-          <Ionicons name="chevron-forward" size={16} color="#666" />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderProjectItem = ({ item }: { item: Project }) => (
-    <TouchableOpacity
-      style={styles.projectItem}
-      onPress={() => router.push(`/projects/${item.id}` as any)}
-    >
-      <View style={styles.projectHeader}>
-        <View style={styles.projectIcon}>
-          <Ionicons name="folder" size={24} color={getStatusColor(item.status)} />
-        </View>
-        <View style={styles.projectInfo}>
-          <Text style={styles.projectTitle} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.projectMeta}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-            <Text style={styles.projectStatus}>{item.status.replace('_', ' ')}</Text>
-          </View>
-          {item.dueDate && (
-            <Text style={styles.projectDate}>Due: {formatDate(item.dueDate)}</Text>
-          )}
-        </View>
-        <Ionicons name="chevron-forward" size={16} color="#666" />
-      </View>
-    </TouchableOpacity>
-  );
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return theme.colors.success;
+      case 'in_progress': return theme.colors.warning;
+      case 'pending': return theme.colors.info;
+      default: return theme.colors.textSecondary;
+    }
+  };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar backgroundColor="#2196F3" barStyle="light-content" />
-        <Header title="Dashboard" />
-        <View style={styles.centered}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading dashboard...</Text>
-          </View>
-        </View>
+      <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading dashboard...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="#2196F3" barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={theme.colors.statusBar} />
       <Header 
         title="Dashboard" 
         rightButton={{
-          icon: 'add-circle-outline',
-          onPress: () => router.push('/tasks/create' as any)
+          icon: isDarkMode ? 'sunny-outline' : 'moon-outline',
+          onPress: toggleTheme,
         }}
       />
-      
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
         {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Quick Stats</Text>
+        <View style={[styles.section, { marginBottom: theme.spacing.lg }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, marginBottom: theme.spacing.md }]}>
+            Quick Stats
+          </Text>
           <View style={styles.statsGrid}>
-            <TouchableOpacity 
-              style={[styles.statCard, styles.projectCard]}
-              onPress={() => router.push('/projects' as any)}
-            >
-              <View style={styles.statIcon}>
-                <Ionicons name="folder-outline" size={28} color="#2196F3" />
-              </View>
-              <View style={styles.statInfo}>
-                <Text style={styles.statNumber}>{stats?.totalProjects || 0}</Text>
-                <Text style={styles.statLabel}>Projects</Text>
-              </View>
-            </TouchableOpacity>
+            <StatCard
+              title="Projects"
+              value={stats?.totalProjects || 0}
+              icon={<Ionicons name="folder-outline" size={24} color={theme.colors.primary} />}
+              onPress={() => router.push('/(tabs)/projects')}
+              style={styles.statCard}
+            />
 
-            <TouchableOpacity 
-              style={[styles.statCard, styles.taskCard]}
-              onPress={() => router.push('/tasks' as any)}
-            >
-              <View style={styles.statIcon}>
-                <Ionicons name="list-outline" size={28} color="#4CAF50" />
-              </View>
-              <View style={styles.statInfo}>
-                <Text style={styles.statNumber}>{stats?.totalTasks || 0}</Text>
-                <Text style={styles.statLabel}>Total Tasks</Text>
-              </View>
-            </TouchableOpacity>
+            <StatCard
+              title="Tasks"
+              value={stats?.totalTasks || 0}
+              icon={<Ionicons name="checkmark-circle-outline" size={24} color={theme.colors.success} />}
+              onPress={() => router.push('/(tabs)/tasks')}
+              style={styles.statCard}
+            />
+          </View>
 
-            <TouchableOpacity 
-              style={[styles.statCard, styles.completedCard]}
-              onPress={() => router.push('/tasks' as any)}
-            >
-              <View style={styles.statIcon}>
-                <Ionicons name="checkmark-circle-outline" size={28} color="#4CAF50" />
-              </View>
-              <View style={styles.statInfo}>
-                <Text style={styles.statNumber}>{stats?.completedTasks || 0}</Text>
-                <Text style={styles.statLabel}>Completed</Text>
-              </View>
-            </TouchableOpacity>
+          <View style={styles.statsGrid}>
+            <StatCard
+              title="Pending"
+              value={stats?.pendingTasks || 0}
+              icon={<Ionicons name="time-outline" size={24} color={theme.colors.warning} />}
+              style={styles.statCard}
+            />
 
-            <TouchableOpacity 
-              style={[styles.statCard, styles.pendingCard]}
-              onPress={() => router.push('/tasks' as any)}
-            >
-              <View style={styles.statIcon}>
-                <Ionicons name="time-outline" size={28} color="#FF9800" />
-              </View>
-              <View style={styles.statInfo}>
-                <Text style={styles.statNumber}>{stats?.pendingTasks || 0}</Text>
-                <Text style={styles.statLabel}>Pending</Text>
-              </View>
-            </TouchableOpacity>
+            <StatCard
+              title="Overdue"
+              value={stats?.overdueTasks || 0}
+              icon={<Ionicons name="alert-circle-outline" size={24} color={theme.colors.error} />}
+              style={styles.statCard}
+            />
           </View>
         </View>
 
         {/* Recent Tasks */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Tasks</Text>
-            <TouchableOpacity 
-              style={styles.seeAllButton}
-              onPress={() => router.push('/tasks' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-              <Ionicons name="chevron-forward" size={16} color="#2196F3" />
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent Tasks</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/tasks')}>
+              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>See All</Text>
             </TouchableOpacity>
           </View>
           
           {recentTasks.length > 0 ? (
-            <FlatList
-              data={recentTasks}
-              renderItem={renderTaskItem}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="document-text-outline" size={48} color="#ccc" />
-              <Text style={styles.emptyText}>No tasks yet</Text>
-              <TouchableOpacity 
-                style={styles.createButton}
-                onPress={() => router.push('/tasks/create' as any)}
-              >
-                <Text style={styles.createButtonText}>Create Your First Task</Text>
-              </TouchableOpacity>
+            <View style={styles.tasksList}>
+              {recentTasks.map((task) => (
+                <AnimatedCard
+                  key={task.id}
+                  onPress={() => router.push(`/(tabs)/tasks/${task.id}`)}
+                  style={{ marginBottom: theme.spacing.sm }}
+                  pressAnimationType="scale"
+                >
+                  <View style={styles.taskItem}>
+                    <View style={styles.taskContent}>
+                      <Text style={[styles.taskTitle, { color: theme.colors.text }]} numberOfLines={1}>
+                        {task.name}
+                      </Text>
+                      <View style={styles.taskMeta}>
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) + '20' }]}>
+                          <Text style={[styles.statusText, { color: getStatusColor(task.status) }]}>
+                            {task.status.replace('_', ' ').toUpperCase()}
+                          </Text>
+                        </View>
+                        {task.dueDate && (
+                          <Text style={[styles.taskDue, { color: theme.colors.textSecondary }]}>
+                            {formatDate(task.dueDate)}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+                  </View>
+                </AnimatedCard>
+              ))}
             </View>
+          ) : (
+            <Card padding="large">
+              <View style={styles.emptyState}>
+                <Ionicons name="clipboard-outline" size={48} color={theme.colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                  No tasks yet
+                </Text>
+                <Button
+                  title="Create Task"
+                  onPress={() => router.push('/(tabs)/tasks/create')}
+                  size="small"
+                  style={{ marginTop: theme.spacing.md }}
+                />
+              </View>
+            </Card>
           )}
         </View>
 
         {/* Recent Projects */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: theme.spacing.lg }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Projects</Text>
-            <TouchableOpacity 
-              style={styles.seeAllButton}
-              onPress={() => router.push('/projects' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-              <Ionicons name="chevron-forward" size={16} color="#2196F3" />
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent Projects</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/projects')}>
+              <Text style={[styles.seeAll, { color: theme.colors.primary }]}>See All</Text>
             </TouchableOpacity>
           </View>
           
           {recentProjects.length > 0 ? (
-            <FlatList
-              data={recentProjects}
-              renderItem={renderProjectItem}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
-            />
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="folder-outline" size={48} color="#ccc" />
-              <Text style={styles.emptyText}>No projects yet</Text>
-              <TouchableOpacity 
-                style={styles.createButton}
-                onPress={() => router.push('/projects/create' as any)}
-              >
-                <Text style={styles.createButtonText}>Create Your First Project</Text>
-              </TouchableOpacity>
+            <View style={styles.projectsList}>
+              {recentProjects.map((project) => (
+                <AnimatedCard
+                  key={project.id}
+                  onPress={() => router.push(`/(tabs)/projects/${project.id}`)}
+                  style={{ marginBottom: theme.spacing.sm }}
+                  pressAnimationType="scale"
+                >
+                  <View style={styles.projectItem}>
+                    <View style={styles.projectIcon}>
+                      <Ionicons name="folder" size={24} color={getStatusColor(project.status)} />
+                    </View>
+                    <View style={styles.projectContent}>
+                      <Text style={[styles.projectTitle, { color: theme.colors.text }]} numberOfLines={1}>
+                        {project.name}
+                      </Text>
+                      <View style={styles.projectMeta}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(project.status) }]} />
+                        <Text style={[styles.projectStatus, { color: theme.colors.textSecondary }]}>
+                          {project.status.replace('_', ' ')}
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+                  </View>
+                </AnimatedCard>
+              ))}
             </View>
+          ) : (
+            <Card padding="large">
+              <View style={styles.emptyState}>
+                <Ionicons name="folder-outline" size={48} color={theme.colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                  No projects yet
+                </Text>
+                <Button
+                  title="Create Project"
+                  onPress={() => router.push('/(tabs)/projects/create')}
+                  size="small"
+                  style={{ marginTop: theme.spacing.md }}
+                />
+              </View>
+            </Card>
           )}
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={[styles.section, { marginTop: theme.spacing.lg, marginBottom: theme.spacing.xxl }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, marginBottom: theme.spacing.md }]}>
+            Quick Actions
+          </Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.quickActionButton}
-              onPress={() => router.push('/tasks/create' as any)}
-            >
-              <Ionicons name="add-circle" size={24} color="#fff" />
-              <Text style={styles.quickActionText}>New Task</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.quickActionButton, styles.projectActionButton]}
-              onPress={() => router.push('/projects/create' as any)}
-            >
-              <Ionicons name="folder-open" size={24} color="#fff" />
-              <Text style={styles.quickActionText}>New Project</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.quickActionButton, styles.searchActionButton]}
-              onPress={() => router.push('/search' as any)}
-            >
-              <Ionicons name="search" size={24} color="#fff" />
-              <Text style={styles.quickActionText}>Search</Text>
-            </TouchableOpacity>
+            <Button
+              title="New Task"
+              onPress={() => router.push('/(tabs)/tasks/create')}
+              style={styles.actionButton}
+              size="large"
+            />
+            <Button
+              title="New Project"
+              onPress={() => router.push('/(tabs)/projects/create')}
+              variant="outline"
+              style={styles.actionButton}
+              size="large"
+            />
           </View>
         </View>
       </ScrollView>
@@ -324,101 +282,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 10,
   },
   content: {
     flex: 1,
   },
-  statsContainer: {
-    backgroundColor: '#fff',
-    margin: 16,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  statCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
-    minHeight: 80,
-  },
-  projectCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-  },
-  taskCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  completedCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  pendingCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
-  },
-  statIcon: {
-    marginRight: 12,
-  },
-  statInfo: {
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
   section: {
-    backgroundColor: '#fff',
-    margin: 16,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -426,151 +295,135 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  seeAllButton: {
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+  },
+  statContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  seeAllText: {
-    fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '600',
-    marginRight: 4,
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  statInfo: {
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  tasksList: {
+    marginTop: 8,
   },
   taskItem: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-  },
-  taskHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  taskInfo: {
+  taskContent: {
     flex: 1,
-    marginRight: 12,
   },
   taskTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   taskMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginLeft: 8,
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   statusText: {
-    fontSize: 12,
-    color: '#666',
-    textTransform: 'capitalize',
+    fontSize: 10,
+    fontWeight: '600',
   },
-  taskActions: {
-    alignItems: 'flex-end',
-  },
-  dueDate: {
+  taskDue: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+  },
+  projectsList: {
+    marginTop: 8,
   },
   projectItem: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#9C27B0',
-  },
-  projectHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   projectIcon: {
     marginRight: 12,
   },
-  projectInfo: {
+  projectContent: {
     flex: 1,
   },
   projectTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   projectMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
   },
   projectStatus: {
     fontSize: 12,
-    color: '#666',
     textTransform: 'capitalize',
   },
-  projectDate: {
-    fontSize: 12,
-    color: '#666',
+  quickActions: {
+    gap: 12,
+  },
+  actionButton: {
+    marginBottom: 8,
   },
   emptyState: {
     alignItems: 'center',
-    padding: 32,
+    paddingVertical: 24,
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    fontWeight: '500',
     marginTop: 12,
-    marginBottom: 20,
+    textAlign: 'center',
   },
-  createButton: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  quickActionButton: {
-    backgroundColor: '#2196F3',
+  centered: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 10,
+    alignItems: 'center',
   },
-  projectActionButton: {
-    backgroundColor: '#4CAF50',
-  },
-  searchActionButton: {
-    backgroundColor: '#FF9800',
-  },
-  quickActionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
